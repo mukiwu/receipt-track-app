@@ -12,12 +12,24 @@ export default function Home() {
   const { receipts, isLoaded, addReceipt, deleteReceipt } = useReceipts();
   const [mounted, setMounted] = useState(false);
   const [view, setView] = useState<"none" | "archive" | "chart">("none");
+  const [showLoading, setShowLoading] = useState(true);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted || !isLoaded) {
+  // 最小顯示時間 1.5 秒，確保 loading 動畫能完整呈現
+  useEffect(() => {
+    if (mounted && isLoaded) {
+      const timer = setTimeout(() => {
+        setShowLoading(false);
+      }, 1500); // 1.5 秒延遲
+
+      return () => clearTimeout(timer);
+    }
+  }, [mounted, isLoaded]);
+
+  if (!mounted || !isLoaded || showLoading) {
     return <PrinterLoading />;
   }
 
