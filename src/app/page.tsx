@@ -5,10 +5,11 @@ import { motion } from "framer-motion";
 import Printer from "@/components/Printer";
 import Archive from "@/components/Archive";
 import Chart from "@/components/Chart";
+import PrinterLoading from "@/components/PrinterLoading";
 import { useReceipts } from "@/hooks/useReceipts";
 
 export default function Home() {
-  const { receipts, isLoaded, addReceipt, deleteReceipt, loadMockData } = useReceipts();
+  const { receipts, isLoaded, addReceipt, deleteReceipt } = useReceipts();
   const [mounted, setMounted] = useState(false);
   const [view, setView] = useState<"none" | "archive" | "chart">("none");
 
@@ -17,18 +18,7 @@ export default function Home() {
   }, []);
 
   if (!mounted || !isLoaded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center gap-4"
-        >
-          <div className="w-12 h-12 border-2 border-thermal-amber border-t-transparent rounded-full animate-spin" />
-          <span className="font-mono text-sm text-gray-500">Loading...</span>
-        </motion.div>
-      </div>
-    );
+    return <PrinterLoading />;
   }
 
   return (
@@ -84,14 +74,6 @@ export default function Home() {
             </a>{" "}
             & AI
           </p>
-
-          {/* Mock Data Button */}
-          <button
-            onClick={loadMockData}
-            className="mt-6 px-4 py-2 font-mono text-xs text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            📊 載入測試資料
-          </button>
         </motion.footer>
       </div>
     </main>
