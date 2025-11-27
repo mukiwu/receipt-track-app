@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Receipt } from "@/types";
+import { generateMockReceipts } from "@/utils/generateMockData";
 
 const STORAGE_KEY = "thermal-receipts";
 
@@ -47,12 +48,18 @@ export function useReceipts() {
     setReceipts([]);
   };
 
+  const loadMockData = () => {
+    const mockReceipts = generateMockReceipts(30);
+    setReceipts(mockReceipts);
+  };
+
   return {
     receipts,
     isLoaded,
     addReceipt,
     deleteReceipt,
     clearAllReceipts,
+    loadMockData,
   };
 }
 

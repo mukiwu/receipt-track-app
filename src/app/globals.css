@@ -284,3 +284,12 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
+/* 隱藏滾動條但保持滾動功能 */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

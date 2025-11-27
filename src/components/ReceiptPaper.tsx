@@ -43,28 +43,20 @@ export default function ReceiptPaper({
     return seed;
   }, [receipt.id]);
 
-  // 根據種子生成隨機名字
-  const generateRandomName = useCallback(() => {
+  // 根據種子生成隨機單一字母
+  const generateRandomLetter = useCallback(() => {
     const seed = getSeed();
-    let s = seed;
-    const random = () => seededRandom(s++);
+    const random = seededRandom(seed);
 
-    // 隨機字元數 2-5
-    const length = 2 + Math.floor(random() * 4);
-    let name = '';
+    // 合併大小寫字母
+    const allLetters = UPPERCASE + LOWERCASE;
 
-    // 第一個字母大寫
-    name += UPPERCASE[Math.floor(random() * 26)];
-
-    // 其餘字母小寫
-    for (let i = 1; i < length; i++) {
-      name += LOWERCASE[Math.floor(random() * 26)];
-    }
-
-    return name;
+    // 隨機選擇一個字母
+    const index = Math.floor(random * allLetters.length);
+    return allLetters[index];
   }, [getSeed]);
 
-  const signatureName = generateRandomName();
+  const signatureLetter = generateRandomLetter();
 
   // 格式化日期：2025.11.27 (四) 11:07
   const formatFullDate = (dateStr: string, timeStr: string) => {
@@ -160,7 +152,7 @@ export default function ReceiptPaper({
           {/* 收據頭部 */}
           <div className="p-5">
             {/* 標題區：Icon + 商店名稱/日期 */}
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2">
               {/* 左側：類別 Icon */}
               <div 
                 className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -187,14 +179,14 @@ export default function ReceiptPaper({
             </div>
 
             {/* 虛線分隔 */}
-            <div className="flex items-center gap-2 my-4">
+            <div className="flex items-center gap-2 mt-3 mb-6">
               <div className="flex-1 border-t-2 border-dashed border-gray-300" />
             </div>
 
             {/* 項目列表 */}
             <div className="space-y-3 mb-4">
               {receipt.items.map((item, index) => (
-                <div key={item.id} className="flex items-center gap-3">
+                <div key={item.id} className="flex items-baseline gap-3">
                   <span className="font-mono text-sm text-gray-400 w-4 flex-shrink-0 text-center">
                     {index + 1}
                   </span>
@@ -232,36 +224,23 @@ export default function ReceiptPaper({
             </div>
 
             {/* 底部裝飾 */}
-            <div className="border-t border-gray-200 pt-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="font-mono text-[10px] text-gray-400">
-                    RECEIPT TRACKER
-                  </p>
-                  <p className="font-mono text-[10px] text-gray-400">
-                    感謝使用
-                  </p>
-                </div>
-                <div className="flex-shrink-0">
-                  <p
-                    className="text-neutral-700 text-2xl"
-                    style={{ fontFamily: "'Gama Hend', cursive" }}
-                  >
-                    {signatureName}
-                  </p>
-                </div>
+            <div className="border-t border-gray-200 py-4">
+              {/* 簽名區域 */}
+              <div className="flex justify-center items-center my-4">
+                <p
+                  className="text-neutral-700 leading-none"
+                  style={{
+                    fontFamily: "'PWSignatures', cursive",
+                    fontSize: '80px'
+                  }}
+                >
+                  {signatureLetter}
+                </p>
               </div>
-            </div>
 
-            {/* 印章 */}
-            <div className="flex flex-col items-center mt-4">
-              <div className="w-14 h-14 border-[1.5px] border-gray-300 rounded-full flex items-center justify-center">
-                {/* 細膩的收據圖示 */}
-                <svg className="w-6 h-6 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 4v16l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V4l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z" />
-                  <line x1="8" y1="9" x2="16" y2="9" />
-                  <line x1="8" y1="13" x2="14" y2="13" />
-                </svg>
+              {/* 下方文字 */}
+              <div className="font-mono text-[10px] text-gray-400 text-center mt-4">
+                RECEIPT TRACKER
               </div>
             </div>
           </div>

@@ -10,9 +10,11 @@ import { v4 as uuidv4 } from "uuid";
 
 interface PrinterProps {
   onReceiptSaved: (receipt: Receipt) => void;
+  onShowChart: () => void;
+  onShowArchive: () => void;
 }
 
-export default function Printer({ onReceiptSaved }: PrinterProps) {
+export default function Printer({ onReceiptSaved, onShowChart, onShowArchive }: PrinterProps) {
   const [printerState, setPrinterState] = useState<PrinterState>({
     status: "ready",
     message: "",
@@ -513,13 +515,20 @@ export default function Printer({ onReceiptSaved }: PrinterProps) {
               <span className="text-xs">PRINT</span>
             </RetroKey>
 
-            {/* 新記帳 */}
-            <RetroKey onClick={handleNewReceipt}>
-              <span className="text-[10px]">NEW</span>
+            {/* 圖表統計 */}
+            <RetroKey onClick={onShowChart}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
             </RetroKey>
 
             {/* 查看存檔 */}
-            <RetroKey onClick={handleScrollToArchive}>
+            <RetroKey onClick={onShowArchive}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
               </svg>
@@ -540,12 +549,12 @@ export default function Printer({ onReceiptSaved }: PrinterProps) {
       </div>
 
       {/* DEBUG 按鈕 */}
-      <button
+      {/* <button
         onClick={handleDebugPrint}
         className="mt-4 px-4 py-2 bg-gray-800 text-white text-xs font-mono rounded-lg hover:bg-gray-700 transition-colors opacity-50 hover:opacity-100"
       >
         🔧 DEBUG: 重跑動畫
-      </button>
+      </button> */}
     </div>
   );
 }

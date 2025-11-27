@@ -1,8 +1,7 @@
-/* Gama Hand Handwriting Font */
+/* PWSignatures Font */
 @font-face {
-  font-family: 'Gama Hend';
-  src: url('/fonts/Gama Hand.otf') format('opentype'),
-       url('/fonts/Gama Hand.ttf') format('truetype');
+  font-family: 'PWSignatures';
+  src: url('/fonts/PWSignatures.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;

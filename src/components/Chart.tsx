@@ -1,19 +1,17 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Receipt } from "@/types";
-import ReceiptPaper from "./ReceiptPaper";
+import { useState, useMemo } from "react";
+import { motion } from "framer-motion";
+import { Receipt, CATEGORY_INFO, ReceiptCategory } from "@/types";
 import ScrollPicker from "./ScrollPicker";
 
-interface ArchiveProps {
+interface ChartProps {
   receipts: Receipt[];
-  onDelete: (id: string) => void;
 }
 
 type FilterType = "all" | "year" | "month" | "day";
 
-export default function Archive({ receipts, onDelete }: ArchiveProps) {
+export default function Chart({ receipts }: ChartProps) {
   const [filterType, setFilterType] = useState<FilterType>("day"); // 預設為日篩選
 
   // 初始化為當前日期
@@ -88,20 +86,45 @@ export default function Archive({ receipts, onDelete }: ArchiveProps) {
     });
   }, [receipts, filterType, selectedYear, selectedMonth, selectedDay]);
 
-  const totalAmount = filteredReceipts.reduce((sum, r) => sum + r.total, 0);
+  // 計算類別統計
+  const categoryStats = useMemo(() => {
+    const stats: Record<ReceiptCategory, { count: number; total: number }> = {
+      food: { count: 0, total: 0 },
+      shopping: { count: 0, total: 0 },
+      transport: { count: 0, total: 0 },
+      entertainment: { count: 0, total: 0 },
+      daily: { count: 0, total: 0 },
+      medical: { count: 0, total: 0 },
+      other: { count: 0, total: 0 },
+    };
 
-  // 切換篩選類型（日期已在 state 初始化為當前日期）
-  const handleFilterChange = (type: FilterType) => {
-    setFilterType(type);
-    // 狀態已經初始化為當前日期，不需要重置
-  };
+    filteredReceipts.forEach((receipt) => {
+      const category = receipt.category || "other";
+      stats[category].count += 1;
+      stats[category].total += receipt.total;
+    });
+
+    return stats;
+  }, [filteredReceipts]);
+
+  // 計算總金額
+  const totalAmount = useMemo(() => {
+    return filteredReceipts.reduce((sum, r) => sum + r.total, 0);
+  }, [filteredReceipts]);
+
+  // 排序類別（按金額由高到低）
+  const sortedCategories = useMemo(() => {
+    return (Object.keys(categoryStats) as ReceiptCategory[])
+      .filter((cat) => categoryStats[cat].count > 0)
+      .sort((a, b) => categoryStats[b].total - categoryStats[a].total);
+  }, [categoryStats]);
 
   if (receipts.length === 0) {
     return null;
   }
 
   return (
-    <div id="archive-section" className="w-[320px] mt-8">
+    <div id="chart-section" className="w-[320px] mt-8">
       {/* 標題區 */}
       <div className="flex items-center justify-center gap-3 mb-4">
         <svg
@@ -114,11 +137,11 @@ export default function Archive({ receipts, onDelete }: ArchiveProps) {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={1.5}
-            d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
           />
         </svg>
         <span className="font-mono text-sm tracking-[0.3em] text-gray-500">
-          ARCHIVE
+          CHART
         </span>
         <div className="flex-1 border-t border-gray-300" />
       </div>
@@ -200,69 +223,105 @@ export default function Archive({ receipts, onDelete }: ArchiveProps) {
         )}
       </div>
 
-      {/* 統計資訊 */}
-      <div className="flex justify-between items-center mb-4 px-2">
-        <span className="font-mono text-xs text-gray-500">
-          {filteredReceipts.length} 筆記錄
-        </span>
-        <span className="font-mono text-sm text-thermal-text font-bold">
-          總計 ${totalAmount.toFixed(0)}
-        </span>
+      {/* 總計卡片 */}
+      <div className="receipt-paper rounded-lg p-5 mb-4">
+        <div className="text-center">
+          <p className="font-mono text-xs text-gray-500 mb-2">總支出</p>
+          <p className="font-mono text-3xl font-bold text-thermal-text">
+            ${totalAmount.toFixed(0)}
+          </p>
+          <p className="font-mono text-xs text-gray-400 mt-2">
+            {filteredReceipts.length} 筆記錄
+          </p>
+        </div>
       </div>
 
-      {/* 長按提示 */}
-      <div className="text-center mb-3">
-        <span className="font-mono text-[10px] text-gray-400">
-          長按收據可刪除
-        </span>
-      </div>
+      {/* 類別統計 */}
+      {sortedCategories.length > 0 ? (
+        <div className="receipt-paper rounded-lg p-5 space-y-4">
+          <h3 className="font-mono text-xs text-gray-500 text-center mb-4">
+            類別統計
+          </h3>
 
-      {/* 收據列表 */}
-      <div className="space-y-4">
-        <AnimatePresence mode="popLayout">
-          {filteredReceipts.length > 0 ? (
-            filteredReceipts.map((receipt, index) => (
+          {sortedCategories.map((category, index) => {
+            const stat = categoryStats[category];
+            const percentage = totalAmount > 0 ? (stat.total / totalAmount) * 100 : 0;
+            const categoryInfo = CATEGORY_INFO[category];
+
+            return (
               <motion.div
-                key={receipt.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -100 }}
-                transition={{ delay: index * 0.05 }}
-                layout
+                key={category}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="space-y-2"
               >
-                <ReceiptPaper
-                  receipt={receipt}
-                  isArchived={true}
-                  onDelete={() => onDelete(receipt.id)}
-                />
-              </motion.div>
-            ))
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="receipt-paper rounded-lg p-8 text-center"
-            >
-              <div className="text-gray-400 space-y-2">
-                <svg
-                  className="w-12 h-12 mx-auto opacity-30"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                {/* 類別資訊 */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-sm"
+                      style={{ backgroundColor: categoryInfo.color }}
+                    />
+                    <span className="font-mono text-xs text-gray-600">
+                      {categoryInfo.label}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono text-sm font-bold text-thermal-text">
+                      ${stat.total.toFixed(0)}
+                    </p>
+                    <p className="font-mono text-[10px] text-gray-400">
+                      {stat.count} 筆
+                    </p>
+                  </div>
+                </div>
+
+                {/* 進度條 */}
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${percentage}%` }}
+                    transition={{ delay: index * 0.1 + 0.2, duration: 0.5 }}
+                    className="h-full rounded-full"
+                    style={{ backgroundColor: categoryInfo.color }}
                   />
-                </svg>
-                <p className="font-mono text-sm">此期間無記錄</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+                </div>
+
+                {/* 百分比 */}
+                <div className="text-right">
+                  <span className="font-mono text-[10px] text-gray-400">
+                    {percentage.toFixed(1)}%
+                  </span>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="receipt-paper rounded-lg p-8 text-center"
+        >
+          <div className="text-gray-400 space-y-2">
+            <svg
+              className="w-12 h-12 mx-auto opacity-30"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
+            </svg>
+            <p className="font-mono text-sm">此期間無記錄</p>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }
