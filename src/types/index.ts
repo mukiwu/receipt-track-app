@@ -44,3 +44,25 @@ export interface PrinterState {
   message: string;
 }
 
+// 成就類型
+export type AchievementType = "streak" | "count" | "saving" | "category";
+
+export interface Achievement {
+  id: string;
+  type: AchievementType;
+  title: string;
+  description: string;
+  icon: string;
+  requirement: number;
+  current: number;
+  unlocked: boolean;
+  unlockedAt?: number;
+  category?: ReceiptCategory; // 用於分類專家成就
+}
+
+export interface AchievementNotification {
+  achievement: Achievement;
+  timestamp: number;
+  isRead: boolean;
+}
+
