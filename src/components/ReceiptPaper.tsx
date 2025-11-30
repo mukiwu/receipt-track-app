@@ -62,12 +62,20 @@ export default function ReceiptPaper({
   // 格式化日期：2025.11.27 (四) 11:07
   const formatFullDate = (dateStr: string, timeStr: string) => {
     const weekDays = ["日", "一", "二", "三", "四", "五", "六"];
-    // dateStr 格式是 "27/11/25"
-    const [day, month, year] = dateStr.split("/");
-    const fullYear = `20${year}`;
-    const date = new Date(`${fullYear}-${month}-${day}`);
+    let year: string, month: string, day: string;
+    
+    // 支援新格式 YYYY.MM.DD 和舊格式 DD/MM/YY
+    if (dateStr.includes(".")) {
+      [year, month, day] = dateStr.split(".");
+    } else {
+      // 舊格式相容
+      [day, month, year] = dateStr.split("/");
+      year = `20${year}`;
+    }
+    
+    const date = new Date(`${year}-${month}-${day}`);
     const weekDay = weekDays[date.getDay()];
-    return `${fullYear}.${month}.${day} (${weekDay}) ${timeStr}`;
+    return `${year}.${month}.${day} (${weekDay}) ${timeStr}`;
   };
 
   const handleTear = () => {
@@ -226,7 +234,7 @@ export default function ReceiptPaper({
                   <h3 className="font-mono font-bold text-sm text-thermal-text">
                     {receipt.storeName}
                   </h3>
-                  <p className="font-mono text-xs text-gray-400 mt-0.5">
+                  <p className="font-mono text-[10px] text-gray-400 mt-0.5">
                     {formatFullDate(receipt.date, receipt.time)}
                   </p>
                 </div>

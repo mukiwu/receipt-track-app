@@ -23,8 +23,14 @@ export default function Archive({ receipts, onDelete }: ArchiveProps) {
   const [selectedMonth, setSelectedMonth] = useState<string>((now.getMonth() + 1).toString().padStart(2, '0'));
   const [selectedDay, setSelectedDay] = useState<string>(now.getDate().toString().padStart(2, '0'));
 
-  // 解析日期字串 "DD/MM/YY" -> { year, month, day }
+  // 解析日期字串 "YYYY.MM.DD" -> { year, month, day }
   const parseDate = (dateStr: string) => {
+    // 支援新格式 YYYY.MM.DD 和舊格式 DD/MM/YY
+    if (dateStr.includes(".")) {
+      const [year, month, day] = dateStr.split(".");
+      return { year, month, day };
+    }
+    // 舊格式相容
     const [day, month, year] = dateStr.split("/");
     return {
       year: `20${year}`,

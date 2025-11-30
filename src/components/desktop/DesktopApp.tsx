@@ -43,12 +43,12 @@ export default function DesktopApp() {
   const [showCameraScan, setShowCameraScan] = useState(false);
   const [showAISettings, setShowAISettings] = useState(false);
 
-  // 格式化日期
+  // 格式化日期 YYYY.MM.DD
   const formatDate = (date: Date) => {
     const day = date.getDate().toString().padStart(2, "0");
     const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const year = date.getFullYear().toString().slice(-2);
-    return `${day}/${month}/${year}`;
+    const year = date.getFullYear();
+    return `${year}.${month}.${day}`;
   };
 
   // 格式化時間
