@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import Providers from "@/components/Providers";
 import "./globals.css";
 
 const GA_MEASUREMENT_ID = "G-EP4QMLWLV0";
@@ -32,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="zh-TW">
       <body className="antialiased">
-        {children}
+        <Providers>{children}</Providers>
         <SpeedInsights />
         
         {/* Google Analytics */}

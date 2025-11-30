@@ -11,9 +11,13 @@ import Achievements from "@/components/Achievements";
 import AchievementToast from "@/components/AchievementToast";
 import CameraScan from "@/components/CameraScan";
 import AISettingsModal from "@/components/AISettingsModal";
+import AuthGuard from "@/components/AuthGuard";
+import UserMenu from "@/components/UserMenu";
+import DesktopApp from "@/components/desktop/DesktopApp";
 import { useReceipts } from "@/hooks/useReceipts";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useAISettings } from "@/hooks/useAISettings";
+import { useIsDesktop } from "@/hooks/useMediaQuery";
 import { AIReceiptResult, Receipt } from "@/types";
 import {
   trackReceiptCreated,
@@ -21,9 +25,11 @@ import {
   trackViewChanged,
   trackCameraScanOpened,
   trackAISettingsOpened,
+  trackEvent,
 } from "@/utils/analytics";
 
-export default function Home() {
+// 行動版應用
+function MobileApp() {
   const { receipts, isLoaded, addReceipt, deleteReceipt } = useReceipts();
   const {
     achievements,
@@ -32,8 +38,13 @@ export default function Home() {
     unlockedCount,
     markNotificationAsRead,
   } = useAchievements(receipts);
-  const { settings: aiSettings, isLoaded: aiSettingsLoaded, isConfigured, saveSettings } = useAISettings();
-  
+  const {
+    settings: aiSettings,
+    isLoaded: aiSettingsLoaded,
+    isConfigured,
+    saveSettings,
+  } = useAISettings();
+
   const [mounted, setMounted] = useState(false);
   const [view, setView] = useState<"none" | "archive" | "chart" | "achievements">("archive");
   const [showLoading, setShowLoading] = useState(true);
@@ -63,8 +74,7 @@ export default function Home() {
   // 處理 AI 收據辨識結果
   const handleReceiptScanned = (result: AIReceiptResult) => {
     const now = new Date();
-    
-    // 將 AI 辨識結果轉換為完整的 Receipt 物件
+
     const receipt: Receipt = {
       id: uuidv4(),
       receiptNo: generateReceiptNo(),
@@ -81,7 +91,6 @@ export default function Home() {
       createdAt: now.getTime(),
     };
 
-    // 追蹤 AI 掃描建立的收據
     trackReceiptCreated({
       category: receipt.category,
       total: receipt.total,
@@ -90,12 +99,11 @@ export default function Home() {
       source: "ai_scan",
     });
 
-    // 直接儲存收據
     addReceipt(receipt);
     setShowCameraScan(false);
   };
 
-  // 處理刪除收據（包含追蹤）
+  // 處理刪除收據
   const handleDeleteReceipt = (id: string) => {
     const receipt = receipts.find((r) => r.id === id);
     if (receipt) {
@@ -107,7 +115,7 @@ export default function Home() {
     deleteReceipt(id);
   };
 
-  // 處理視圖切換（包含追蹤）
+  // 處理視圖切換
   const handleViewChange = (newView: "archive" | "chart" | "achievements") => {
     setView(newView);
     trackViewChanged(newView);
@@ -117,12 +125,11 @@ export default function Home() {
     setMounted(true);
   }, []);
 
-  // 最小顯示時間 1.5 秒，確保 loading 動畫能完整呈現
   useEffect(() => {
     if (mounted && isLoaded && aiSettingsLoaded) {
       const timer = setTimeout(() => {
         setShowLoading(false);
-      }, 1500); // 1.5 秒延遲
+      }, 1500);
 
       return () => clearTimeout(timer);
     }
@@ -134,6 +141,11 @@ export default function Home() {
 
   return (
     <main className="min-h-screen py-8 px-4">
+      {/* 用戶選單 */}
+      <div className="fixed top-4 right-4 z-40">
+        <UserMenu />
+      </div>
+
       <div className="flex flex-col items-center">
         {/* 打字機 */}
         <motion.div
@@ -228,5 +240,30 @@ export default function Home() {
         </motion.footer>
       </div>
     </main>
+  );
+}
+
+// 主頁面
+export default function Home() {
+  const isDesktop = useIsDesktop();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    // 追蹤裝置類型
+    trackEvent("device_type", {
+      type: isDesktop ? "desktop" : "mobile",
+    });
+  }, [isDesktop]);
+
+  // 避免 SSR 閃爍
+  if (!mounted) {
+    return <PrinterLoading />;
+  }
+
+  return (
+    <AuthGuard>
+      {isDesktop ? <DesktopApp /> : <MobileApp />}
+    </AuthGuard>
   );
 }

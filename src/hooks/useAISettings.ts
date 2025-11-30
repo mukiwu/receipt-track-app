@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { doc, onSnapshot, setDoc, deleteDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/contexts/AuthContext";
 import { AISettings, AIProvider, AI_MODELS } from "@/types";
 
-const STORAGE_KEY = "receipt-tracker-ai-settings";
+const LOCAL_STORAGE_KEY = "receipt-tracker-ai-settings";
 
 const DEFAULT_SETTINGS: AISettings = {
   provider: "openai",
@@ -11,83 +14,146 @@ const DEFAULT_SETTINGS: AISettings = {
   apiKey: "",
 };
 
+// 驗證設定是否有效
+const isValidSettings = (s: AISettings): boolean => {
+  const validProviders: AIProvider[] = ["openai", "anthropic", "google"];
+  if (!validProviders.includes(s.provider)) return false;
+
+  const providerModels = AI_MODELS[s.provider];
+  if (!providerModels.some((m) => m.id === s.model)) return false;
+
+  return true;
+};
+
 export function useAISettings() {
+  const { user } = useAuth();
   const [settings, setSettings] = useState<AISettings>(DEFAULT_SETTINGS);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // 從 localStorage 讀取設定
+  // 監聽設定變化
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as AISettings;
-        // 驗證設定的有效性
-        if (isValidSettings(parsed)) {
-          setSettings(parsed);
+    if (!user) {
+      // 未登入時從 localStorage 讀取
+      try {
+        const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored) as AISettings;
+          if (isValidSettings(parsed)) {
+            setSettings(parsed);
+          }
         }
+      } catch (error) {
+        console.error("Failed to load AI settings from localStorage:", error);
       }
-    } catch (error) {
-      console.error("Failed to load AI settings:", error);
+      setIsLoaded(true);
+      return;
     }
-    setIsLoaded(true);
-  }, []);
 
-  // 驗證設定是否有效
-  const isValidSettings = (s: AISettings): boolean => {
-    const validProviders: AIProvider[] = ["openai", "anthropic", "google"];
-    if (!validProviders.includes(s.provider)) return false;
-    
-    const providerModels = AI_MODELS[s.provider];
-    if (!providerModels.some((m) => m.id === s.model)) return false;
-    
-    return true;
-  };
+    // 已登入時從 Firestore 即時同步
+    const settingsRef = doc(db, "users", user.uid, "settings", "ai");
 
-  // 儲存設定到 localStorage
-  const saveSettings = useCallback((newSettings: AISettings) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
-      setSettings(newSettings);
-    } catch (error) {
-      console.error("Failed to save AI settings:", error);
-    }
-  }, []);
+    const unsubscribe = onSnapshot(
+      settingsRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data() as AISettings;
+          if (isValidSettings(data)) {
+            setSettings(data);
+          }
+        }
+        setIsLoaded(true);
+      },
+      (error) => {
+        console.error("Error fetching AI settings:", error);
+        setIsLoaded(true);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // 儲存設定
+  const saveSettings = useCallback(
+    async (newSettings: AISettings) => {
+      if (!user) {
+        // 未登入時存到 localStorage
+        try {
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newSettings));
+          setSettings(newSettings);
+        } catch (error) {
+          console.error("Failed to save AI settings to localStorage:", error);
+        }
+        return;
+      }
+
+      // 已登入時存到 Firestore
+      try {
+        const settingsRef = doc(db, "users", user.uid, "settings", "ai");
+        await setDoc(settingsRef, newSettings);
+      } catch (error) {
+        console.error("Failed to save AI settings:", error);
+        throw error;
+      }
+    },
+    [user]
+  );
 
   // 更新提供商（同時更新為該提供商的預設模型）
-  const updateProvider = useCallback((provider: AIProvider) => {
-    const defaultModel = AI_MODELS[provider][0].id;
-    saveSettings({
-      ...settings,
-      provider,
-      model: defaultModel,
-    });
-  }, [settings, saveSettings]);
+  const updateProvider = useCallback(
+    (provider: AIProvider) => {
+      const defaultModel = AI_MODELS[provider][0].id;
+      saveSettings({
+        ...settings,
+        provider,
+        model: defaultModel,
+      });
+    },
+    [settings, saveSettings]
+  );
 
   // 更新模型
-  const updateModel = useCallback((model: string) => {
-    saveSettings({
-      ...settings,
-      model,
-    });
-  }, [settings, saveSettings]);
+  const updateModel = useCallback(
+    (model: string) => {
+      saveSettings({
+        ...settings,
+        model,
+      });
+    },
+    [settings, saveSettings]
+  );
 
   // 更新 API Key
-  const updateApiKey = useCallback((apiKey: string) => {
-    saveSettings({
-      ...settings,
-      apiKey,
-    });
-  }, [settings, saveSettings]);
+  const updateApiKey = useCallback(
+    (apiKey: string) => {
+      saveSettings({
+        ...settings,
+        apiKey,
+      });
+    },
+    [settings, saveSettings]
+  );
 
   // 清除設定
-  const clearSettings = useCallback(() => {
+  const clearSettings = useCallback(async () => {
+    if (!user) {
+      try {
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+        setSettings(DEFAULT_SETTINGS);
+      } catch (error) {
+        console.error("Failed to clear AI settings:", error);
+      }
+      return;
+    }
+
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      const settingsRef = doc(db, "users", user.uid, "settings", "ai");
+      await deleteDoc(settingsRef);
       setSettings(DEFAULT_SETTINGS);
     } catch (error) {
       console.error("Failed to clear AI settings:", error);
+      throw error;
     }
-  }, []);
+  }, [user]);
 
   // 檢查是否已配置 API Key
   const isConfigured = Boolean(settings.apiKey);
@@ -103,5 +169,3 @@ export function useAISettings() {
     clearSettings,
   };
 }
-
-
