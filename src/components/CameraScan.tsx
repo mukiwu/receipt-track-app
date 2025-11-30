@@ -350,7 +350,7 @@ export default function CameraScan({
                               className={`px-2 py-1 rounded text-[10px] font-mono transition-all ${
                                 receiptResult.category === cat
                                   ? "bg-[#4ADE80]/20 border border-[#4ADE80]/60"
-                                  : "border border-[#4ADE80]/20 hover:border-[#4ADE80]/40"
+                                  : "border border-[#4ADE80]/20 hover:border-[#4ADE80]/40 text-[#4ADE80]/70"
                               }`}
                               style={{
                                 color: receiptResult.category === cat ? CATEGORY_INFO[cat].color : undefined,
