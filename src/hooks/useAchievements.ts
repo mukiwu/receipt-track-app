@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Receipt, Achievement, AchievementNotification } from "@/types";
 import { ACHIEVEMENT_DEFINITIONS } from "@/utils/achievements";
+import { trackAchievementUnlocked } from "@/utils/analytics";
 
 const STORAGE_KEY = "achievements";
 const NOTIFICATIONS_KEY = "achievement-notifications";
@@ -167,6 +168,13 @@ export function useAchievements(receipts: Receipt[]) {
           timestamp: Date.now(),
           isRead: false,
         };
+
+        // 追蹤成就解鎖
+        trackAchievementUnlocked({
+          achievement_id: achievement.id,
+          achievement_type: achievement.type,
+          achievement_title: achievement.title,
+        });
 
         setNotifications((prev) => [...prev, notification]);
 

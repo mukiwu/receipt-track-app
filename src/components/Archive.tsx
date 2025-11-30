@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Receipt } from "@/types";
 import ReceiptPaper from "./ReceiptPaper";
 import ScrollPicker from "./ScrollPicker";
+import { trackArchiveFilterChanged } from "@/utils/analytics";
 
 interface ArchiveProps {
   receipts: Receipt[];
@@ -93,6 +94,8 @@ export default function Archive({ receipts, onDelete }: ArchiveProps) {
   // 切換篩選類型（日期已在 state 初始化為當前日期）
   const handleFilterChange = (type: FilterType) => {
     setFilterType(type);
+    // 追蹤篩選類型變更
+    trackArchiveFilterChanged(type);
     // 狀態已經初始化為當前日期，不需要重置
   };
 
@@ -127,7 +130,7 @@ export default function Archive({ receipts, onDelete }: ArchiveProps) {
       <div className="receipt-paper rounded-lg p-4 mb-4 space-y-3">
         {/* 切換按鈕 */}
         <button
-          onClick={() => setFilterType(filterType === "all" ? "day" : "all")}
+          onClick={() => handleFilterChange(filterType === "all" ? "day" : "all")}
           className="w-full py-2 px-3 rounded-lg font-mono text-xs transition-all bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300"
         >
           {filterType === "all" ? "📅 按日期篩選" : "📋 顯示全部"}
@@ -139,7 +142,7 @@ export default function Archive({ receipts, onDelete }: ArchiveProps) {
             {/* 篩選精度選擇 */}
             <div className="grid grid-cols-3 gap-2">
               <button
-                onClick={() => setFilterType("year")}
+                onClick={() => handleFilterChange("year")}
                 className={`py-1.5 px-2 rounded font-mono text-xs transition-all ${
                   filterType === "year"
                     ? "bg-thermal-amber text-white"
@@ -149,7 +152,7 @@ export default function Archive({ receipts, onDelete }: ArchiveProps) {
                 年
               </button>
               <button
-                onClick={() => setFilterType("month")}
+                onClick={() => handleFilterChange("month")}
                 className={`py-1.5 px-2 rounded font-mono text-xs transition-all ${
                   filterType === "month"
                     ? "bg-thermal-amber text-white"
@@ -159,7 +162,7 @@ export default function Archive({ receipts, onDelete }: ArchiveProps) {
                 月
               </button>
               <button
-                onClick={() => setFilterType("day")}
+                onClick={() => handleFilterChange("day")}
                 className={`py-1.5 px-2 rounded font-mono text-xs transition-all ${
                   filterType === "day"
                     ? "bg-thermal-amber text-white"

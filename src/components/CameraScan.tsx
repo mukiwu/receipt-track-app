@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAIReceipt } from "@/hooks/useAIReceipt";
 import { AISettings, AIReceiptResult, ReceiptCategory, CATEGORY_INFO, AI_PROVIDER_INFO } from "@/types";
+import { trackAIScanStarted, trackAIScanCompleted, trackAIScanFailed } from "@/utils/analytics";
 
 interface CameraScanProps {
   onReceiptScanned: (result: AIReceiptResult) => void;
@@ -21,6 +22,7 @@ export default function CameraScan({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [receiptResult, setReceiptResult] = useState<AIReceiptResult | null>(null);
+  const [originalResult, setOriginalResult] = useState<AIReceiptResult | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { analyzeReceipt, isProcessing, error } = useAIReceipt();
@@ -43,11 +45,24 @@ export default function CameraScan({
 
       // 如果已配置 AI，自動開始分析
       if (isConfigured) {
+        // 追蹤 AI 掃描開始
+        trackAIScanStarted({
+          provider: aiSettings.provider,
+          model: aiSettings.model,
+        });
+
         try {
           const result = await analyzeReceipt(file, aiSettings);
           setReceiptResult(result);
+          setOriginalResult(JSON.parse(JSON.stringify(result))); // 深拷貝原始結果
           setIsEditing(true);
         } catch (err) {
+          // 追蹤 AI 掃描失敗
+          trackAIScanFailed({
+            provider: aiSettings.provider,
+            model: aiSettings.model,
+            error_type: err instanceof Error ? err.message : "unknown_error",
+          });
           console.error("AI analysis failed:", err);
         }
       }
@@ -59,11 +74,24 @@ export default function CameraScan({
   const handleAnalyze = async () => {
     if (!selectedFile || !isConfigured) return;
     
+    // 追蹤 AI 掃描開始
+    trackAIScanStarted({
+      provider: aiSettings.provider,
+      model: aiSettings.model,
+    });
+
     try {
       const result = await analyzeReceipt(selectedFile, aiSettings);
       setReceiptResult(result);
+      setOriginalResult(JSON.parse(JSON.stringify(result))); // 深拷貝原始結果
       setIsEditing(true);
     } catch (err) {
+      // 追蹤 AI 掃描失敗
+      trackAIScanFailed({
+        provider: aiSettings.provider,
+        model: aiSettings.model,
+        error_type: err instanceof Error ? err.message : "unknown_error",
+      });
       console.error("AI analysis failed:", err);
     }
   };
@@ -106,6 +134,18 @@ export default function CameraScan({
         (sum, item) => sum + item.price * item.quantity,
         0
       );
+
+      // 檢查是否有編輯過
+      const wasEdited = JSON.stringify(receiptResult) !== JSON.stringify(originalResult);
+
+      // 追蹤 AI 掃描完成
+      trackAIScanCompleted({
+        provider: aiSettings.provider,
+        model: aiSettings.model,
+        item_count: receiptResult.items.length,
+        was_edited: wasEdited,
+      });
+
       onReceiptScanned({ ...receiptResult, total });
       onClose();
     }
@@ -116,6 +156,7 @@ export default function CameraScan({
     setSelectedImage(null);
     setSelectedFile(null);
     setReceiptResult(null);
+    setOriginalResult(null);
     setIsEditing(false);
   };
 

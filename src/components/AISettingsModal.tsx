@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AISettings, AIProvider, AI_MODELS, AI_PROVIDER_INFO } from "@/types";
+import { trackAISettingsSaved } from "@/utils/analytics";
 
 interface AISettingsModalProps {
   isOpen: boolean;
@@ -37,6 +38,12 @@ export default function AISettingsModal({
 
   // 處理儲存
   const handleSave = () => {
+    // 追蹤 AI 設定儲存
+    trackAISettingsSaved({
+      provider: localSettings.provider,
+      model: localSettings.model,
+    });
+
     onSave(localSettings);
     onClose();
   };
@@ -249,4 +256,5 @@ export default function AISettingsModal({
     </AnimatePresence>
   );
 }
+
 

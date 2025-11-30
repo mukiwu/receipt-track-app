@@ -7,6 +7,7 @@ import ReceiptPaper from "./ReceiptPaper";
 import InputScreen from "./InputScreen";
 import { useStoreNames } from "@/hooks/useStoreNames";
 import { v4 as uuidv4 } from "uuid";
+import { trackReceiptCreated } from "@/utils/analytics";
 
 interface PrinterProps {
   onReceiptSaved: (receipt: Receipt) => void;
@@ -108,6 +109,14 @@ export default function Printer({ onReceiptSaved, onShowChart, onShowArchive, on
 
   const handleTear = () => {
     if (currentReceipt) {
+      // 追蹤手動建立的收據
+      trackReceiptCreated({
+        category: currentReceipt.category,
+        total: currentReceipt.total,
+        item_count: currentReceipt.items.length,
+        payment_method: currentReceipt.paymentMethod,
+        source: "manual",
+      });
       onReceiptSaved(currentReceipt);
     }
     

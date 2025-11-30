@@ -15,6 +15,13 @@ import { useReceipts } from "@/hooks/useReceipts";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useAISettings } from "@/hooks/useAISettings";
 import { AIReceiptResult, Receipt } from "@/types";
+import {
+  trackReceiptCreated,
+  trackReceiptDeleted,
+  trackViewChanged,
+  trackCameraScanOpened,
+  trackAISettingsOpened,
+} from "@/utils/analytics";
 
 export default function Home() {
   const { receipts, isLoaded, addReceipt, deleteReceipt } = useReceipts();
@@ -74,9 +81,36 @@ export default function Home() {
       createdAt: now.getTime(),
     };
 
+    // 追蹤 AI 掃描建立的收據
+    trackReceiptCreated({
+      category: receipt.category,
+      total: receipt.total,
+      item_count: receipt.items.length,
+      payment_method: receipt.paymentMethod,
+      source: "ai_scan",
+    });
+
     // 直接儲存收據
     addReceipt(receipt);
     setShowCameraScan(false);
+  };
+
+  // 處理刪除收據（包含追蹤）
+  const handleDeleteReceipt = (id: string) => {
+    const receipt = receipts.find((r) => r.id === id);
+    if (receipt) {
+      trackReceiptDeleted({
+        category: receipt.category,
+        total: receipt.total,
+      });
+    }
+    deleteReceipt(id);
+  };
+
+  // 處理視圖切換（包含追蹤）
+  const handleViewChange = (newView: "archive" | "chart" | "achievements") => {
+    setView(newView);
+    trackViewChanged(newView);
   };
 
   useEffect(() => {
@@ -109,12 +143,18 @@ export default function Home() {
         >
           <Printer
             onReceiptSaved={addReceipt}
-            onShowChart={() => setView("chart")}
-            onShowArchive={() => setView("archive")}
-            onShowAchievements={() => setView("achievements")}
+            onShowChart={() => handleViewChange("chart")}
+            onShowArchive={() => handleViewChange("archive")}
+            onShowAchievements={() => handleViewChange("achievements")}
             unreadAchievements={unreadCount}
-            onShowCameraScan={() => setShowCameraScan(true)}
-            onShowSettings={() => setShowAISettings(true)}
+            onShowCameraScan={() => {
+              setShowCameraScan(true);
+              trackCameraScanOpened();
+            }}
+            onShowSettings={() => {
+              setShowAISettings(true);
+              trackAISettingsOpened();
+            }}
             isAIConfigured={isConfigured}
           />
         </motion.div>
@@ -131,7 +171,7 @@ export default function Home() {
             ) : view === "achievements" ? (
               <Achievements achievements={achievements} unlockedCount={unlockedCount} />
             ) : (
-              <Archive receipts={receipts} onDelete={deleteReceipt} />
+              <Archive receipts={receipts} onDelete={handleDeleteReceipt} />
             )}
           </motion.div>
         )}
