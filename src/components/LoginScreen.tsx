@@ -31,9 +31,6 @@ export default function LoginScreen() {
       >
         {/* 復古打字機風格的登入卡片 */}
         <div className="relative">
-          {/* 打字機頂部裝飾 */}
-          <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-32 h-6 bg-gradient-to-b from-[#C41E3A] to-[#9A1428] rounded-t-xl" />
-          
           {/* 主卡片 */}
           <div className="receipt-paper rounded-2xl p-8 shadow-2xl">
             {/* Logo 區域 */}
