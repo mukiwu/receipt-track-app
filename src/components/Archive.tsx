@@ -104,7 +104,7 @@ export default function Archive({ receipts, onDelete }: ArchiveProps) {
   }
 
   return (
-    <div id="archive-section" className="w-[320px] mt-8">
+    <div id="archive-section" className="w-[320px] md:w-full md:max-w-4xl mt-8">
       {/* 標題區 */}
       <div className="flex items-center justify-center gap-3 mb-4">
         <svg
@@ -127,7 +127,7 @@ export default function Archive({ receipts, onDelete }: ArchiveProps) {
       </div>
 
       {/* 篩選器 */}
-      <div className="receipt-paper rounded-lg p-4 mb-4 space-y-3">
+      <div className="receipt-paper rounded-lg p-4 mb-4 space-y-3 md:max-w-md md:mx-auto">
         {/* 切換按鈕 */}
         <button
           onClick={() => handleFilterChange(filterType === "all" ? "day" : "all")}
@@ -204,17 +204,17 @@ export default function Archive({ receipts, onDelete }: ArchiveProps) {
       </div>
 
       {/* 統計資訊 */}
-      <div className="flex justify-between items-center mb-4 px-2">
-        <span className="font-mono text-xs text-gray-500">
+      <div className="flex justify-between items-center mb-4 px-2 md:px-0">
+        <span className="font-mono text-xs md:text-sm text-gray-500">
           {filteredReceipts.length} 筆記錄
         </span>
-        <span className="font-mono text-sm text-thermal-text font-bold">
+        <span className="font-mono text-sm md:text-base text-thermal-text font-bold">
           總計 ${totalAmount.toFixed(0)}
         </span>
       </div>
 
       {/* 收據列表 */}
-      <div className="space-y-4">
+      <div className="space-y-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0">
         <AnimatePresence mode="popLayout">
           {filteredReceipts.length > 0 ? (
             filteredReceipts.map((receipt, index) => (
@@ -223,7 +223,7 @@ export default function Archive({ receipts, onDelete }: ArchiveProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -100 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: index * 0.03 }}
                 layout
               >
                 <ReceiptPaper

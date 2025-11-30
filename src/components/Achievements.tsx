@@ -22,7 +22,7 @@ export default function Achievements({ achievements, unlockedCount }: Achievemen
   };
 
   return (
-    <div className="w-[320px] mt-8">
+    <div className="w-[320px] md:w-full md:max-w-4xl mt-8">
       {/* 標題區 */}
       <div className="flex items-center justify-center gap-3 mb-4">
         <svg
@@ -45,19 +45,19 @@ export default function Achievements({ achievements, unlockedCount }: Achievemen
       </div>
 
       {/* 總進度卡片 */}
-      <div className="receipt-paper rounded-lg p-6 mb-6">
+      <div className="receipt-paper rounded-lg p-6 mb-6 md:max-w-md md:mx-auto">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-mono text-xl font-bold text-gray-800">
+            <h2 className="font-mono text-xl md:text-2xl font-bold text-gray-800">
               {unlockedCount} / {totalCount}
             </h2>
-            <p className="font-mono text-xs text-gray-500">成就已解鎖</p>
+            <p className="font-mono text-xs md:text-sm text-gray-500">成就已解鎖</p>
           </div>
-          <div className="text-4xl">🏆</div>
+          <div className="text-4xl md:text-5xl">🏆</div>
         </div>
 
         {/* 進度條 */}
-        <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-3 md:h-4 bg-gray-100 rounded-full overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
@@ -107,8 +107,8 @@ function AchievementSection({ title, achievements }: AchievementSectionProps) {
 
   return (
     <div className="mb-6">
-      <h3 className="font-mono text-sm text-gray-600 mb-3">{title}</h3>
-      <div className="grid grid-cols-2 gap-4">
+      <h3 className="font-mono text-sm md:text-base text-gray-600 mb-3">{title}</h3>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {achievements.map((achievement, index) => (
           <AchievementCard key={achievement.id} achievement={achievement} index={index} />
         ))}

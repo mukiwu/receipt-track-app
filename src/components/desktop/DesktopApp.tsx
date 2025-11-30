@@ -148,23 +148,11 @@ export default function DesktopApp() {
           />
         );
       case "archive":
-        return (
-          <div className="max-w-4xl mx-auto">
-            <Archive receipts={receipts} onDelete={handleDeleteReceipt} />
-          </div>
-        );
+        return <Archive receipts={receipts} onDelete={handleDeleteReceipt} />;
       case "chart":
-        return (
-          <div className="max-w-4xl mx-auto">
-            <Chart receipts={receipts} />
-          </div>
-        );
+        return <Chart receipts={receipts} />;
       case "achievements":
-        return (
-          <div className="max-w-4xl mx-auto">
-            <Achievements achievements={achievements} unlockedCount={unlockedCount} />
-          </div>
-        );
+        return <Achievements achievements={achievements} unlockedCount={unlockedCount} />;
       default:
         return null;
     }

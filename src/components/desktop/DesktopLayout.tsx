@@ -1,8 +1,9 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import UserMenu from "../UserMenu";
+import { useAuth } from "@/contexts/AuthContext";
 
 type NavItem = "dashboard" | "archive" | "chart" | "achievements" | "settings";
 
@@ -67,7 +68,23 @@ export default function DesktopLayout({
   activeNav,
   onNavChange,
 }: DesktopLayoutProps) {
+  const { user } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // 根據時間顯示問候語
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "早安";
+    if (hour < 18) return "午安";
+    return "晚安";
+  }, []);
+
+  // 取得用戶暱稱（優先使用 displayName，否則取 email 的 @ 前面部分）
+  const userName = useMemo(() => {
+    if (user?.displayName) return user.displayName;
+    if (user?.email) return user.email.split("@")[0];
+    return "使用者";
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-[#F5F1EB] flex">
@@ -173,10 +190,10 @@ export default function DesktopLayout({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-mono text-lg font-bold text-gray-800">
-                {navItems.find((item) => item.id === activeNav)?.label || "儀表板"}
+                {greeting}，{userName} 👋
               </h2>
               <p className="font-mono text-xs text-gray-500">
-                歡迎回來！
+                今天也要好好記帳喔！
               </p>
             </div>
             <UserMenu />
