@@ -15,9 +15,11 @@ interface PrinterProps {
   onShowAchievements: () => void;
   unreadAchievements?: number;
   onShowCameraScan?: () => void;
+  onShowSettings?: () => void;
+  isAIConfigured?: boolean;
 }
 
-export default function Printer({ onReceiptSaved, onShowChart, onShowArchive, onShowAchievements, unreadAchievements = 0, onShowCameraScan }: PrinterProps) {
+export default function Printer({ onReceiptSaved, onShowChart, onShowArchive, onShowAchievements, unreadAchievements = 0, onShowCameraScan, onShowSettings, isAIConfigured = false }: PrinterProps) {
   const [printerState, setPrinterState] = useState<PrinterState>({
     status: "ready",
     message: "",
@@ -491,7 +493,25 @@ export default function Printer({ onReceiptSaved, onShowChart, onShowArchive, on
                       </span>
                     </div>
                   </div>
-                  <span className="font-mono text-[8px] text-[#4ADE80]/50">v1.0</span>
+                  <div className="flex items-center gap-2">
+                    {/* AI 設定按鈕 */}
+                    {onShowSettings && (
+                      <button
+                        onClick={onShowSettings}
+                        className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-[#4ADE80]/10 transition-colors group"
+                      >
+                        <div className={`w-[5px] h-[5px] rounded-full ${isAIConfigured ? 'bg-[#4ADE80]' : 'bg-[#4ADE80]/30'}`} 
+                          style={{ boxShadow: isAIConfigured ? '0 0 4px rgba(74,222,128,0.8)' : 'none' }} 
+                        />
+                        <span className="font-mono text-[8px] text-[#4ADE80]/50 group-hover:text-[#4ADE80]/80 transition-colors">AI</span>
+                        <svg className="w-2.5 h-2.5 text-[#4ADE80]/50 group-hover:text-[#4ADE80]/80 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </button>
+                    )}
+                    <span className="font-mono text-[8px] text-[#4ADE80]/50">v1.0</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -512,7 +532,8 @@ export default function Printer({ onReceiptSaved, onShowChart, onShowArchive, on
             {/* 成就系統 */}
             <RetroKey onClick={onShowAchievements} className="relative">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                <circle cx="12" cy="14" r="6" strokeWidth={2} />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3L12 8L15 3M9 3V1M15 3V1" />
               </svg>
               {unreadAchievements > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">

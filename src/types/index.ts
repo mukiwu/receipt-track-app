@@ -66,3 +66,45 @@ export interface AchievementNotification {
   isRead: boolean;
 }
 
+// AI 相關類型
+export type AIProvider = "openai" | "anthropic" | "google";
+
+export interface AISettings {
+  provider: AIProvider;
+  model: string;
+  apiKey: string;
+}
+
+export const AI_MODELS: Record<AIProvider, { id: string; name: string }[]> = {
+  openai: [
+    { id: "gpt-4o", name: "GPT-4o" },
+    { id: "gpt-4o-mini", name: "GPT-4o Mini" },
+    { id: "gpt-4-turbo", name: "GPT-4 Turbo" },
+  ],
+  anthropic: [
+    { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4" },
+    { id: "claude-3-5-sonnet-20241022", name: "Claude 3.5 Sonnet" },
+    { id: "claude-3-opus-20240229", name: "Claude 3 Opus" },
+    { id: "claude-3-sonnet-20240229", name: "Claude 3 Sonnet" },
+  ],
+  google: [
+    { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" },
+    { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash" },
+  ],
+};
+
+export const AI_PROVIDER_INFO: Record<AIProvider, { name: string; color: string }> = {
+  openai: { name: "OpenAI", color: "#10A37F" },
+  anthropic: { name: "Anthropic", color: "#D97706" },
+  google: { name: "Google", color: "#4285F4" },
+};
+
+// AI 辨識收據結果（不含 id, receiptNo, createdAt 等自動生成的欄位）
+export interface AIReceiptResult {
+  storeName: string;
+  category: ReceiptCategory;
+  items: Omit<ReceiptItem, "id">[];
+  paymentMethod: string;
+  total: number;
+}
+

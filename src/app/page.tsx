@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { v4 as uuidv4 } from "uuid";
 import Printer from "@/components/Printer";
 import Archive from "@/components/Archive";
 import Chart from "@/components/Chart";
@@ -9,8 +10,11 @@ import PrinterLoading from "@/components/PrinterLoading";
 import Achievements from "@/components/Achievements";
 import AchievementToast from "@/components/AchievementToast";
 import CameraScan from "@/components/CameraScan";
+import AISettingsModal from "@/components/AISettingsModal";
 import { useReceipts } from "@/hooks/useReceipts";
 import { useAchievements } from "@/hooks/useAchievements";
+import { useAISettings } from "@/hooks/useAISettings";
+import { AIReceiptResult, Receipt } from "@/types";
 
 export default function Home() {
   const { receipts, isLoaded, addReceipt, deleteReceipt } = useReceipts();
@@ -21,16 +25,57 @@ export default function Home() {
     unlockedCount,
     markNotificationAsRead,
   } = useAchievements(receipts);
+  const { settings: aiSettings, isLoaded: aiSettingsLoaded, isConfigured, saveSettings } = useAISettings();
+  
   const [mounted, setMounted] = useState(false);
-  const [view, setView] = useState<"none" | "archive" | "chart" | "achievements">("none");
+  const [view, setView] = useState<"none" | "archive" | "chart" | "achievements">("archive");
   const [showLoading, setShowLoading] = useState(true);
   const [showCameraScan, setShowCameraScan] = useState(false);
+  const [showAISettings, setShowAISettings] = useState(false);
 
-  // 處理 OCR 文字提取
-  const handleTextExtracted = (text: string) => {
-    // TODO: 將 OCR 文字填入打字機輸入區
-    // 目前只是將文字輸出到 console，後續可以整合到輸入流程
-    console.log("OCR extracted text:", text);
+  // 格式化日期
+  const formatDate = (date: Date) => {
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear().toString().slice(-2);
+    return `${day}/${month}/${year}`;
+  };
+
+  // 格式化時間
+  const formatTime = (date: Date) => {
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
+  };
+
+  // 生成收據編號
+  const generateReceiptNo = () => {
+    return Math.random().toString(16).substring(2, 8).toUpperCase();
+  };
+
+  // 處理 AI 收據辨識結果
+  const handleReceiptScanned = (result: AIReceiptResult) => {
+    const now = new Date();
+    
+    // 將 AI 辨識結果轉換為完整的 Receipt 物件
+    const receipt: Receipt = {
+      id: uuidv4(),
+      receiptNo: generateReceiptNo(),
+      date: formatDate(now),
+      time: formatTime(now),
+      storeName: result.storeName,
+      category: result.category,
+      items: result.items.map((item) => ({
+        ...item,
+        id: uuidv4(),
+      })),
+      total: result.total,
+      paymentMethod: result.paymentMethod,
+      createdAt: now.getTime(),
+    };
+
+    // 直接儲存收據
+    addReceipt(receipt);
     setShowCameraScan(false);
   };
 
@@ -40,16 +85,16 @@ export default function Home() {
 
   // 最小顯示時間 1.5 秒，確保 loading 動畫能完整呈現
   useEffect(() => {
-    if (mounted && isLoaded) {
+    if (mounted && isLoaded && aiSettingsLoaded) {
       const timer = setTimeout(() => {
         setShowLoading(false);
       }, 1500); // 1.5 秒延遲
 
       return () => clearTimeout(timer);
     }
-  }, [mounted, isLoaded]);
+  }, [mounted, isLoaded, aiSettingsLoaded]);
 
-  if (!mounted || !isLoaded || showLoading) {
+  if (!mounted || !isLoaded || !aiSettingsLoaded || showLoading) {
     return <PrinterLoading />;
   }
 
@@ -69,6 +114,8 @@ export default function Home() {
             onShowAchievements={() => setView("achievements")}
             unreadAchievements={unreadCount}
             onShowCameraScan={() => setShowCameraScan(true)}
+            onShowSettings={() => setShowAISettings(true)}
+            isAIConfigured={isConfigured}
           />
         </motion.div>
 
@@ -95,13 +142,26 @@ export default function Home() {
           onDismiss={markNotificationAsRead}
         />
 
-        {/* 相機掃描 */}
+        {/* AI 收據掃描 */}
         {showCameraScan && (
           <CameraScan
-            onTextExtracted={handleTextExtracted}
+            onReceiptScanned={handleReceiptScanned}
             onClose={() => setShowCameraScan(false)}
+            aiSettings={aiSettings}
+            onOpenSettings={() => {
+              setShowCameraScan(false);
+              setShowAISettings(true);
+            }}
           />
         )}
+
+        {/* AI 設定彈窗 */}
+        <AISettingsModal
+          isOpen={showAISettings}
+          onClose={() => setShowAISettings(false)}
+          settings={aiSettings}
+          onSave={saveSettings}
+        />
 
         {/* 底部資訊 */}
         <motion.footer
@@ -130,4 +190,3 @@ export default function Home() {
     </main>
   );
 }
-

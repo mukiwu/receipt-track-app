@@ -14,7 +14,7 @@ interface ArchiveProps {
 type FilterType = "all" | "year" | "month" | "day";
 
 export default function Archive({ receipts, onDelete }: ArchiveProps) {
-  const [filterType, setFilterType] = useState<FilterType>("day"); // 預設為日篩選
+  const [filterType, setFilterType] = useState<FilterType>("all"); // 預設顯示所有收據
 
   // 初始化為當前日期
   const now = new Date();

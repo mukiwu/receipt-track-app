@@ -22,11 +22,11 @@ export default function Achievements({ achievements, unlockedCount }: Achievemen
   };
 
   return (
-    <div className="w-[360px] mt-8">
+    <div className="w-[320px] mt-8">
       {/* 標題區 */}
-      <div className="flex items-center justify-center gap-3 mb-6">
+      <div className="flex items-center justify-center gap-3 mb-4">
         <svg
-          className="w-5 h-5 text-amber-500"
+          className="w-4 h-4 text-gray-500"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -34,11 +34,11 @@ export default function Achievements({ achievements, unlockedCount }: Achievemen
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={2}
+            strokeWidth={1.5}
             d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
           />
         </svg>
-        <span className="font-mono text-lg tracking-[0.3em] text-gray-700">
+        <span className="font-mono text-sm tracking-[0.3em] text-gray-500">
           ACHIEVEMENTS
         </span>
         <div className="flex-1 border-t border-gray-300" />
