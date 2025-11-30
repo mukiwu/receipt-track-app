@@ -210,13 +210,6 @@ export default function Archive({ receipts, onDelete }: ArchiveProps) {
         </span>
       </div>
 
-      {/* 長按提示 */}
-      <div className="text-center mb-3">
-        <span className="font-mono text-[10px] text-gray-400">
-          長按收據可刪除
-        </span>
-      </div>
-
       {/* 收據列表 */}
       <div className="space-y-4">
         <AnimatePresence mode="popLayout">

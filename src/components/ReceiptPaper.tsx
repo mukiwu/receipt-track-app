@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Receipt, ReceiptCategory, CATEGORY_INFO } from "@/types";
+import html2canvas from "html2canvas";
+import { Receipt, CATEGORY_INFO } from "@/types";
 import { CategoryIcon } from "./InputScreen";
 
 interface ReceiptPaperProps {
@@ -31,8 +32,8 @@ export default function ReceiptPaper({
   const [isTearing, setIsTearing] = useState(false);
   const [showTornPiece, setShowTornPiece] = useState(false);
   const [showActionSheet, setShowActionSheet] = useState(false);
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
-  const isLongPress = useRef(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const receiptRef = useRef<HTMLDivElement>(null);
 
   // 使用 receipt.id 生成種子
   const getSeed = useCallback(() => {
@@ -82,26 +83,10 @@ export default function ReceiptPaper({
     }
   };
 
-  // 長按開始
-  const handleTouchStart = () => {
-    if (!isArchived) return;
-    isLongPress.current = false;
-    longPressTimer.current = setTimeout(() => {
-      isLongPress.current = true;
-      setShowActionSheet(true);
-      // 觸發震動回饋（如果支援）
-      if (navigator.vibrate) {
-        navigator.vibrate(10);
-      }
-    }, 500); // 500ms 長按觸發
-  };
-
-  // 長按結束
-  const handleTouchEnd = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
+  // 開啟選單
+  const handleOpenMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowActionSheet(true);
   };
 
   // 處理刪除
@@ -109,6 +94,63 @@ export default function ReceiptPaper({
     setShowActionSheet(false);
     if (onDelete) {
       onDelete();
+    }
+  };
+
+  // 處理分享
+  const handleShare = async () => {
+    if (!receiptRef.current) return;
+    
+    setIsSharing(true);
+    setShowActionSheet(false);
+
+    try {
+      // 使用 html2canvas 將收據轉換為圖片
+      const canvas = await html2canvas(receiptRef.current, {
+        backgroundColor: "#FDFBF7",
+        scale: 2, // 高解析度
+        useCORS: true,
+        logging: false,
+      });
+
+      // 轉換為 blob
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error("無法生成圖片"));
+          }
+        }, "image/png", 1.0);
+      });
+
+      // 建立檔案
+      const file = new File([blob], `receipt-${receipt.receiptNo}.png`, {
+        type: "image/png",
+      });
+
+      // 檢查是否支援 Web Share API
+      if (navigator.share && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: `收據 - ${receipt.storeName}`,
+          text: `${receipt.storeName} $${receipt.total.toFixed(0)}`,
+          files: [file],
+        });
+      } else {
+        // 降級方案：下載圖片
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `receipt-${receipt.receiptNo}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error("分享失敗:", error);
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -122,7 +164,8 @@ export default function ReceiptPaper({
       <div className="relative">
         {/* 主收據部分 - 撕開時往上飄走 */}
         <motion.div
-          className={`relative ${isArchived ? "cursor-pointer select-none" : ""}`}
+          ref={receiptRef}
+          className={`relative ${isArchived ? "select-none" : ""}`}
           animate={isTearing ? {
             y: -60,
             rotate: -5,
@@ -134,47 +177,59 @@ export default function ReceiptPaper({
             ease: [0.25, 0.46, 0.45, 0.94],
           }}
           whileHover={!isArchived && !isTearing ? { scale: 1.01 } : undefined}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
-          onMouseDown={handleTouchStart}
-          onMouseUp={handleTouchEnd}
-          onMouseLeave={handleTouchEnd}
-          onContextMenu={(e) => {
-            if (isArchived) {
-              e.preventDefault();
-              setShowActionSheet(true);
-            }
-          }}
         >
           {/* 收據本體 - 底部不要陰影，保持接縫自然 */}
           <div className="receipt-paper rounded-lg rounded-b-none overflow-hidden shadow-none">
           {/* 收據頭部 */}
           <div className="p-5">
-            {/* 標題區：Icon + 商店名稱/日期 */}
-            <div className="flex items-center gap-2">
-              {/* 左側：類別 Icon */}
-              <div 
-                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ 
-                  backgroundColor: `${CATEGORY_INFO[receipt.category || "other"].color}15`,
-                  color: CATEGORY_INFO[receipt.category || "other"].color 
-                }}
-              >
-                <CategoryIcon category={receipt.category || "other"} size={22} />
+            {/* 標題區 */}
+            <div className="space-y-2">
+              {/* 第一行：收據編號 + 選單按鈕 */}
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[10px] text-gray-400">
+                  #{receipt.receiptNo}
+                </span>
+                {/* 選單按鈕（僅存檔時顯示） */}
+                {isArchived && (
+                  <button
+                    onClick={handleOpenMenu}
+                    className="p-1 -mr-1 -mt-1 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                    aria-label="選單"
+                  >
+                    <svg 
+                      className="w-5 h-5 text-gray-400" 
+                      fill="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <circle cx="12" cy="6" r="2" />
+                      <circle cx="12" cy="12" r="2" />
+                      <circle cx="12" cy="18" r="2" />
+                    </svg>
+                  </button>
+                )}
               </div>
-              {/* 右側：商店名稱 + 日期 */}
-              <div className="flex-1 min-w-0">
-                <h3 className="font-mono font-bold text-sm text-thermal-text truncate">
-                  {receipt.storeName}
-                </h3>
-                <p className="font-mono text-xs text-gray-400 mt-0.5">
-                  {formatFullDate(receipt.date, receipt.time)}
-                </p>
-              </div>
-              {/* 收據編號 */}
-              <div className="font-mono text-[10px] text-gray-400 flex-shrink-0">
-                #{receipt.receiptNo}
+              
+              {/* 第二行：Icon + 商店名稱/日期 */}
+              <div className="flex items-center gap-3">
+                {/* 類別 Icon */}
+                <div 
+                  className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ 
+                    backgroundColor: `${CATEGORY_INFO[receipt.category || "other"].color}15`,
+                    color: CATEGORY_INFO[receipt.category || "other"].color 
+                  }}
+                >
+                  <CategoryIcon category={receipt.category || "other"} size={22} />
+                </div>
+                {/* 商店名稱 + 日期 */}
+                <div className="flex-1">
+                  <h3 className="font-mono font-bold text-sm text-thermal-text">
+                    {receipt.storeName}
+                  </h3>
+                  <p className="font-mono text-xs text-gray-400 mt-0.5">
+                    {formatFullDate(receipt.date, receipt.time)}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -255,13 +310,6 @@ export default function ReceiptPaper({
             />
           )}
         </div>
-
-        {/* 長按提示（僅存檔時顯示） */}
-        {isArchived && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <span className="text-[10px] text-gray-400 font-mono">長按刪除</span>
-          </div>
-        )}
       </motion.div>
 
       {/* 撕下的小紙片 - 裁切線以下部分 */}
@@ -352,11 +400,26 @@ export default function ReceiptPaper({
                   </p>
                 </div>
                 
+                {/* 分享按鈕 */}
+                <button
+                  onClick={handleShare}
+                  disabled={isSharing}
+                  className="w-full px-4 py-4 text-center text-blue-500 text-lg font-medium active:bg-gray-100 transition-colors border-b border-gray-200/50 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                  {isSharing ? "處理中..." : "分享收據"}
+                </button>
+                
                 {/* 刪除按鈕 */}
                 <button
                   onClick={handleDelete}
-                  className="w-full px-4 py-4 text-center text-red-500 text-lg font-medium active:bg-gray-100 transition-colors"
+                  className="w-full px-4 py-4 text-center text-red-500 text-lg font-medium active:bg-gray-100 transition-colors flex items-center justify-center gap-2"
                 >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
                   刪除收據
                 </button>
               </div>
