@@ -141,12 +141,12 @@ function MobileApp() {
 
   return (
     <main className="min-h-screen py-8 px-4">
-      {/* 用戶選單 */}
-      <div className="fixed top-4 right-4 z-40">
-        <UserMenu />
-      </div>
-
       <div className="flex flex-col items-center">
+        {/* 用戶選單 - 放在打字機上方 */}
+        <div className="w-full max-w-[360px] flex justify-end mb-2">
+          <UserMenu />
+        </div>
+
         {/* 打字機 */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
