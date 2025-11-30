@@ -82,14 +82,13 @@ export const AI_MODELS: Record<AIProvider, { id: string; name: string }[]> = {
     { id: "gpt-4-turbo", name: "GPT-4 Turbo" },
   ],
   anthropic: [
+    { id: "claude-sonnet-4-5-20250929", name: "Claude Sonnet 4.5" },
     { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4" },
     { id: "claude-3-5-sonnet-20241022", name: "Claude 3.5 Sonnet" },
-    { id: "claude-3-opus-20240229", name: "Claude 3 Opus" },
-    { id: "claude-3-sonnet-20240229", name: "Claude 3 Sonnet" },
   ],
   google: [
-    { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" },
-    { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash" },
+    { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
+    { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
   ],
 };
 
