@@ -155,3 +155,21 @@ export const trackAISettingsOpened = () => {
   trackEvent("ai_settings_opened");
 };
 
+// ===== 認證相關事件 =====
+
+export const trackLogin = (method: string) => {
+  trackEvent("login", {
+    method,
+  });
+};
+
+export const trackLogout = () => {
+  trackEvent("logout");
+};
+
+export const trackSignup = (method: string) => {
+  trackEvent("sign_up", {
+    method,
+  });
+};
+

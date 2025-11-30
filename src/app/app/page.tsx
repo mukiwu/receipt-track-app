@@ -11,7 +11,6 @@ import Achievements from "@/components/Achievements";
 import AchievementToast from "@/components/AchievementToast";
 import CameraScan from "@/components/CameraScan";
 import AISettingsModal from "@/components/AISettingsModal";
-import AuthGuard from "@/components/AuthGuard";
 import UserMenu from "@/components/UserMenu";
 import DesktopApp from "@/components/desktop/DesktopApp";
 import { useReceipts } from "@/hooks/useReceipts";
@@ -243,8 +242,8 @@ function MobileApp() {
   );
 }
 
-// 主頁面
-export default function Home() {
+// 儀表板主頁面
+export default function DashboardPage() {
   const isDesktop = useIsDesktop();
   const [mounted, setMounted] = useState(false);
 
@@ -261,9 +260,6 @@ export default function Home() {
     return <PrinterLoading />;
   }
 
-  return (
-    <AuthGuard>
-      {isDesktop ? <DesktopApp /> : <MobileApp />}
-    </AuthGuard>
-  );
+  return isDesktop ? <DesktopApp /> : <MobileApp />;
 }
+

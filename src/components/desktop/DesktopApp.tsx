@@ -10,9 +10,14 @@ import Achievements from "../Achievements";
 import AchievementToast from "../AchievementToast";
 import CameraScan from "../CameraScan";
 import AISettingsModal from "../AISettingsModal";
+import InvoiceList from "../invoice/InvoiceList";
+import InvoiceSettingsModal from "../invoice/InvoiceSettingsModal";
+import FeatureGate from "../subscription/FeatureGate";
+import UpgradeModal from "../subscription/UpgradeModal";
 import { useReceipts } from "@/hooks/useReceipts";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useAISettings } from "@/hooks/useAISettings";
+import { useSubscription } from "@/hooks/useSubscription";
 import { AIReceiptResult, Receipt } from "@/types";
 import {
   trackReceiptCreated,
@@ -22,7 +27,7 @@ import {
   trackAISettingsOpened,
 } from "@/utils/analytics";
 
-type NavItem = "dashboard" | "archive" | "chart" | "achievements" | "settings";
+type NavItem = "dashboard" | "archive" | "chart" | "achievements" | "invoice" | "settings";
 
 export default function DesktopApp() {
   const { receipts, addReceipt, deleteReceipt } = useReceipts();
@@ -39,9 +44,13 @@ export default function DesktopApp() {
     saveSettings,
   } = useAISettings();
 
+  const { isPro } = useSubscription();
+
   const [activeNav, setActiveNav] = useState<NavItem>("dashboard");
   const [showCameraScan, setShowCameraScan] = useState(false);
   const [showAISettings, setShowAISettings] = useState(false);
+  const [showInvoiceSettings, setShowInvoiceSettings] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // 格式化日期 YYYY.MM.DD
   const formatDate = (date: Date) => {
@@ -153,6 +162,15 @@ export default function DesktopApp() {
         return <Chart receipts={receipts} />;
       case "achievements":
         return <Achievements achievements={achievements} unlockedCount={unlockedCount} />;
+      case "invoice":
+        return (
+          <FeatureGate
+            feature="invoice_sync"
+            onUpgradeClick={() => setShowUpgradeModal(true)}
+          >
+            <InvoiceList onOpenSettings={() => setShowInvoiceSettings(true)} />
+          </FeatureGate>
+        );
       default:
         return null;
     }
@@ -189,6 +207,20 @@ export default function DesktopApp() {
         onClose={() => setShowAISettings(false)}
         settings={aiSettings}
         onSave={saveSettings}
+      />
+
+      {/* 電子發票設定彈窗 */}
+      <InvoiceSettingsModal
+        isOpen={showInvoiceSettings}
+        onClose={() => setShowInvoiceSettings(false)}
+      />
+
+      {/* 升級 Pro 彈窗 */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason="feature_locked"
+        featureName="電子發票同步"
       />
     </>
   );
